@@ -1,0 +1,133 @@
+# Changing MOTD
+- name: Changing the MOTD file
+  blockinfile:
+    path: /etc/motd
+    block: |
+      Ansible Managed by maxinepulao
+- block:
+  - name: Verifying if already change the MOTD.
+    shell: cat /etc/motd
+    register: motd_service
+
+  - debug:
+      msg="{{ motd_service }}"
+
+#Installing Service Enterprice (httpd)
+- name: Installing nagios dependecies and libraries.
+  tags: dependecies, libraries
+  yum:
+    name:
+      - gcc
+      - glibc
+      - glibc-common
+      - perl
+      - httpd
+      - php
+      - wget
+      - gd
+      - gd-devel
+      - openssl-devel
+      - gcc
+      - glibc
+      - glibc-common
+      - make
+      - gettext
+      - automake
+      - autoconf
+      - wget
+      - openssl-devel
+      - net-snmp
+      - net-snmp-utils
+      - python2-pip
+    state: latest
+  failed_when: false
+  no_log: true
+
+- name: Install passlib python package.
+  pip:
+    name: passlib
+
+
+#Installing Nagios and configuring.
+- name: Creating a directory named nagios.
+  file:
+    path: ~/nagios
+    state: directory
+
+- name: Downloading Nagios and changing directory. Also, extracting its files.
+  unarchive:
+    src: https://github.com/NagiosEnterprises/nagioscore/archive/nagios-4.4.6.tar.gz
+    dest: ~/nagios
+    remote_src: yes
+    mode: 0777
+    owner: root
+    group: root
+  failed_when: false
+  no_log: true
+
+- name: Instaling Nagios and Compiling it. Also, adding users and groups in nagios.
+  shell: |
+    cd ~/nagios/nagioscore-**
+    ./configure
+    make all
+    make install-groups-users
+    usermod -a -G nagios apache
+    make install
+    make install-daemoninit
+    make install-commandmode
+    make install-config
+    make install-webconf
+  failed_when: false
+  no_log: true
+  
+- name: Downloading nagios plugins and extracting its file.
+  unarchive:
+    src: https://github.com/nagios-plugins/nagios-plugins/archive/release-2.3.3.tar.gz
+    dest: ~/nagios
+    remote_src: yes
+    mode: 0777
+    owner: root
+    group: root
+  failed_when: false
+  no_log: true
+
+- name: Installing nagios plugins and compile its file.
+  shell: |
+    cd ~/nagios/nagios-plugins*
+    ./tools/setup
+    ./configure
+    make
+    make install
+  failed_when: false
+  no_log: true
+  
+- name: Creating user and password file. Also, ensuring the permissions are set.
+  community.general.htpasswd:
+    path: /usr/local/nagios/etc/htpasswd.users
+    name: nagiosadmin
+    password: Yaj159159
+  failed_when: false
+  no_log: true
+
+- name: Starting nagios and enabled it.
+  service:
+    name: nagios
+    state: restarted
+    enabled: true
+  failed_when: false
+  no_log: true
+  failed_when: false
+  no_log: true
+
+- name: Starting httpd and enabled it.
+  service:
+    name: httpd
+    state: restarted
+    enabled: true
+  failed_when: false
+  no_log: true
+
+
+
+
+
